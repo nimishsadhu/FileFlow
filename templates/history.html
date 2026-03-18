@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History — FileFlow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .history-wrap { padding-bottom: 80px; }
+
+        .history-hero {
+            padding:        44px 0 36px;
+            display:        flex;
+            flex-direction: column;
+            gap:            12px;
+            animation:      fadeUp 0.5s ease both;
+        }
+
+        .history-title {
+            font-size:      clamp(28px, 4vw, 42px);
+            font-weight:    900;
+            letter-spacing: -0.03em;
+        }
+
+        .history-sub { font-size: 15px; color: var(--text2); line-height: 1.6; }
+
+        .history-toolbar {
+            display:         flex;
+            align-items:     center;
+            justify-content: space-between;
+            margin-bottom:   20px;
+            flex-wrap:       wrap;
+            gap:             12px;
+        }
+
+        .run-count {
+            font-family:   var(--mono);
+            font-size:     13px;
+            color:         var(--text2);
+            background:    var(--surface);
+            border:        1px solid var(--border);
+            padding:       7px 14px;
+            border-radius: 20px;
+        }
+
+        .run-count span { color: var(--violet); font-weight: 700; }
+
+        .clear-btn {
+            display:       flex;
+            align-items:   center;
+            gap:           6px;
+            background:    rgba(248,113,113,0.08);
+            border:        1px solid rgba(248,113,113,0.25);
+            border-radius: var(--radius-sm);
+            padding:       8px 16px;
+            color:         var(--red);
+            font-family:   var(--font);
+            font-size:     13px;
+            font-weight:   600;
+            cursor:        pointer;
+            transition:    all var(--transition);
+        }
+
+        .clear-btn:hover {
+            background:   rgba(248,113,113,0.15);
+            border-color: rgba(248,113,113,0.5);
+            transform:    translateY(-1px);
+        }
+
+        .runs-list {
+            display:        flex;
+            flex-direction: column;
+            gap:            14px;
+        }
+
+        .run-card {
+            background:              var(--surface);
+            backdrop-filter:         blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border:                  1px solid var(--border);
+            border-radius:           var(--radius);
+            padding:                 22px 24px;
+            display:                 flex;
+            align-items:             center;
+            gap:                     20px;
+            box-shadow:              var(--shadow);
+            transition:              all var(--transition);
+            animation:               fadeUp 0.4s ease both;
+            position:                relative;
+            overflow:                hidden;
+        }
+
+        .run-card::before {
+            content:    '';
+            position:   absolute;
+            left:       0; top: 0; bottom: 0;
+            width:      3px;
+            background: linear-gradient(180deg, var(--violet), var(--sky));
+        }
+
+        .run-card:hover {
+            border-color: var(--border2);
+            transform:    translateY(-2px);
+            box-shadow:   0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .run-card.latest-card::before { background: linear-gradient(180deg, var(--emerald), var(--sky)); }
+
+        .run-number {
+            width:           44px;
+            height:          44px;
+            background:      rgba(167,139,250,0.1);
+            border:          1px solid rgba(167,139,250,0.25);
+            border-radius:   10px;
+            display:         flex;
+            align-items:     center;
+            justify-content: center;
+            font-family:     var(--mono);
+            font-size:       15px;
+            font-weight:     700;
+            color:           var(--violet);
+            flex-shrink:     0;
+        }
+
+        .run-info {
+            flex:           1;
+            display:        flex;
+            flex-direction: column;
+            gap:            6px;
+            min-width:      0;
+        }
+
+        .run-path {
+            font-family:   var(--mono);
+            font-size:     13px;
+            font-weight:   600;
+            color:         var(--text);
+            overflow:      hidden;
+            text-overflow: ellipsis;
+            white-space:   nowrap;
+        }
+
+        .run-meta-row {
+            display:     flex;
+            align-items: center;
+            gap:         12px;
+            flex-wrap:   wrap;
+        }
+
+        .run-date {
+            font-family: var(--mono);
+            font-size:   11px;
+            color:       var(--text3);
+            display:     flex;
+            align-items: center;
+            gap:         5px;
+        }
+
+        .run-categories {
+            font-family:   var(--mono);
+            font-size:     11px;
+            color:         var(--text2);
+            overflow:      hidden;
+            text-overflow: ellipsis;
+            white-space:   nowrap;
+            max-width:     300px;
+        }
+
+        .run-stats {
+            display:     flex;
+            align-items: center;
+            gap:         10px;
+            flex-shrink: 0;
+        }
+
+        .stat-chip {
+            display:        flex;
+            flex-direction: column;
+            align-items:    center;
+            background:     rgba(0,0,0,0.15);
+            border:         1px solid var(--border);
+            border-radius:  var(--radius-sm);
+            padding:        8px 14px;
+            min-width:      70px;
+            text-align:     center;
+        }
+
+        [data-theme="light"] .stat-chip { background: rgba(0,0,0,0.04); }
+
+        .stat-chip-num {
+            font-family:   var(--mono);
+            font-size:     18px;
+            font-weight:   700;
+            color:         var(--violet);
+            line-height:   1;
+            margin-bottom: 3px;
+        }
+
+        .stat-chip-label {
+            font-size:      10px;
+            color:          var(--text3);
+            font-weight:    600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .latest-badge {
+            background:     rgba(52,211,153,0.1);
+            border:         1px solid rgba(52,211,153,0.3);
+            border-radius:  5px;
+            padding:        2px 8px;
+            font-size:      10px;
+            font-weight:    700;
+            color:          var(--emerald);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .delete-btn {
+            width:           34px;
+            height:          34px;
+            background:      rgba(248,113,113,0.06);
+            border:          1px solid rgba(248,113,113,0.15);
+            border-radius:   var(--radius-xs);
+            display:         flex;
+            align-items:     center;
+            justify-content: center;
+            cursor:          pointer;
+            flex-shrink:     0;
+            transition:      all var(--transition);
+            color:           var(--red);
+            opacity:         0.5;
+        }
+
+        .run-card:hover .delete-btn { opacity: 1; }
+
+        .delete-btn:hover {
+            background:   rgba(248,113,113,0.15);
+            border-color: rgba(248,113,113,0.4);
+            transform:    scale(1.1);
+        }
+
+        .empty-state {
+            text-align:     center;
+            padding:        80px 24px;
+            display:        flex;
+            flex-direction: column;
+            align-items:    center;
+            gap:            16px;
+            animation:      fadeUp 0.5s ease both;
+        }
+
+        .empty-icon  { font-size: 60px; line-height: 1; margin-bottom: 4px; }
+        .empty-title { font-size: 22px; font-weight: 800; color: var(--text); }
+        .empty-sub   { font-size: 14px; color: var(--text2); max-width: 360px; line-height: 1.6; }
+
+        .go-home-btn {
+            display:         inline-flex;
+            align-items:     center;
+            gap:             8px;
+            background:      linear-gradient(135deg, #7c3aed, #0ea5e9);
+            border:          none;
+            border-radius:   var(--radius-sm);
+            padding:         12px 24px;
+            color:           white;
+            font-family:     var(--font);
+            font-size:       14px;
+            font-weight:     700;
+            text-decoration: none;
+            transition:      all var(--transition);
+            box-shadow:      0 4px 20px rgba(124,58,237,0.35);
+            margin-top:      8px;
+        }
+
+        .go-home-btn:hover {
+            transform:  translateY(-2px);
+            box-shadow: 0 8px 30px rgba(124,58,237,0.5);
+        }
+
+        .toast {
+            position:      fixed;
+            bottom:        28px;
+            right:         28px;
+            background:    var(--surface2);
+            border:        1px solid var(--border2);
+            border-radius: var(--radius-sm);
+            padding:       14px 20px;
+            font-size:     14px;
+            font-weight:   600;
+            color:         var(--text);
+            box-shadow:    0 8px 30px rgba(0,0,0,0.4);
+            z-index:       999;
+            max-width:     340px;
+        }
+
+        .toast.success { border-color: rgba(52,211,153,0.4); color: var(--emerald); }
+        .toast.error   { border-color: rgba(248,113,113,0.4); color: #fca5a5; }
+
+        .back-btn {
+            display:         flex;
+            align-items:     center;
+            gap:             6px;
+            font-size:       13px;
+            font-weight:     600;
+            color:           var(--text2);
+            text-decoration: none;
+            background:      var(--surface);
+            border:          1px solid var(--border);
+            padding:         8px 14px;
+            border-radius:   var(--radius-sm);
+            transition:      all var(--transition);
+        }
+
+        .back-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+
+        @media (max-width: 768px) {
+            .run-card   { flex-wrap: wrap; }
+            .run-stats  { width: 100%; justify-content: flex-start; }
+            .stat-chip  { flex: 1; }
+            .delete-btn { opacity: 1; }
+        }
+
+        @media (max-width: 480px) {
+            .run-categories { display: none; }
+            .run-stats      { gap: 6px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="aurora">
+        <div class="aurora-blob a1"></div>
+        <div class="aurora-blob a2"></div>
+        <div class="aurora-blob a3"></div>
+    </div>
+
+    <div class="page-wrap history-wrap">
+
+        <nav class="navbar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 7C3 5.9 3.9 5 5 5h4.6l2 2H19c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V7z"
+                              stroke="url(#hg)" stroke-width="2" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="hg" x1="3" y1="5" x2="21" y2="19" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#a78bfa"/>
+                                <stop offset="1" stop-color="#38bdf8"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="logo-text">FileFlow</span>
+            </div>
+
+            <div class="nav-right">
+                <a href="/" class="back-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Back to Home
+                </a>
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span class="theme-icon-dark">🌙</span>
+                    <span class="theme-icon-light">☀️</span>
+                </button>
+            </div>
+        </nav>
+
+        <div class="history-hero">
+            <div class="eyebrow">
+                <span class="eyebrow-dot"></span>
+                Run History
+            </div>
+            <h1 class="history-title">Every run, <span class="gradient-text">recorded</span></h1>
+            <p class="history-sub">
+                FileFlow saves every organizing session to your local database.
+                View past runs, see what was organized, and manage your history.
+            </p>
+        </div>
+
+        {% if runs | length == 0 %}
+
+            <div class="empty-state">
+                <div class="empty-icon">🗃️</div>
+                <div class="empty-title">No runs yet</div>
+                <p class="empty-sub">
+                    You have not organized any folders yet.
+                    Go back home and run FileFlow on a folder to see your history here.
+                </p>
+                <a href="/" class="go-home-btn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Organize My First Folder
+                </a>
+            </div>
+
+        {% else %}
+
+            <div class="history-toolbar">
+                <div class="run-count">
+                    <span>{{ runs | length }}</span>
+                    run{{ 's' if runs | length != 1 else '' }} in history
+                </div>
+                <button class="clear-btn" onclick="clearAllHistory()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                    Clear All History
+                </button>
+            </div>
+
+            <div class="runs-list" id="runsList">
+                {% for run in runs %}
+                    <div class="run-card {{ 'latest-card' if loop.first else '' }}" id="run-{{ run.id }}">
+
+                        <div class="run-number">#{{ runs | length - loop.index0 }}</div>
+
+                        <div class="run-info">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span class="run-path" title="{{ run.folder_path }}">{{ run.folder_path }}</span>
+                                {% if loop.first %}
+                                    <span class="latest-badge">Latest</span>
+                                {% endif %}
+                            </div>
+                            <div class="run-meta-row">
+                                <span class="run-date">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12 6 12 12 16 14"/>
+                                    </svg>
+                                    {{ run.run_date }}
+                                </span>
+                                <span class="run-categories">{{ run.categories }}</span>
+                            </div>
+                        </div>
+
+                        <div class="run-stats">
+                            <div class="stat-chip">
+                                <div class="stat-chip-num">{{ run.total_files }}</div>
+                                <div class="stat-chip-label">Files</div>
+                            </div>
+                            <div class="stat-chip">
+                                <div class="stat-chip-num">{{ run.total_size_mb }}</div>
+                                <div class="stat-chip-label">MB</div>
+                            </div>
+                        </div>
+
+                        <button class="delete-btn"
+                                data-run-id="{{ run.id }}"
+                                onclick="deleteRun(this.dataset.runId)"
+                                title="Delete this run">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                            </svg>
+                        </button>
+
+                    </div>
+                {% endfor %}
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <div class="toast hidden" id="toast"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+
+        async function deleteRun(runId) {
+            if (!confirm("Delete this run from history?")) return
+
+            try {
+                const res  = await fetch(`/delete-run/${runId}`, { method: "POST" })
+                const data = await res.json()
+
+                if (data.success) {
+                    const row = document.getElementById(`run-${runId}`)
+                    row.style.transition = "opacity 0.3s ease, transform 0.3s ease"
+                    row.style.opacity    = "0"
+                    row.style.transform  = "translateX(20px)"
+                    setTimeout(() => { row.remove(); updateRunCount(); checkEmpty() }, 300)
+                    showToast("Run deleted from history", "success")
+                } else {
+                    showToast("Could not delete run.", "error")
+                }
+            } catch {
+                showToast("Network error.", "error")
+            }
+        }
+
+        async function clearAllHistory() {
+            if (!confirm("Delete ALL history? This cannot be undone.")) return
+
+            try {
+                const res  = await fetch("/clear-history", { method: "POST" })
+                const data = await res.json()
+
+                if (data.success) {
+                    showToast("All history cleared", "success")
+                    setTimeout(() => location.reload(), 1200)
+                } else {
+                    showToast(data.error || "Could not clear history.", "error")
+                }
+            } catch {
+                showToast("Network error.", "error")
+            }
+        }
+
+        function updateRunCount() {
+            const remaining = document.querySelectorAll(".run-card").length
+            const chip      = document.querySelector(".run-count")
+            if (chip) {
+                chip.innerHTML = `<span>${remaining}</span> ${remaining === 1 ? "run" : "runs"} in history`
+            }
+        }
+
+        function checkEmpty() {
+            if (document.querySelectorAll(".run-card").length > 0) return
+
+            const toolbar = document.querySelector(".history-toolbar")
+            const list    = document.getElementById("runsList")
+            if (toolbar) toolbar.remove()
+            if (list) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🗃️</div>
+                        <div class="empty-title">No runs left</div>
+                        <p class="empty-sub">All history has been cleared. Go back and organize a folder to start fresh.</p>
+                        <a href="/" class="go-home-btn">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.5">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            Organize a Folder
+                        </a>
+                    </div>
+                `
+            }
+        }
+
+        function showToast(msg, type = "") {
+            const toast       = document.getElementById("toast")
+            toast.textContent = msg
+            toast.className   = `toast ${type}`
+            toast.classList.remove("hidden")
+            setTimeout(() => toast.classList.add("hidden"), 3000)
+        }
+
+        document.addEventListener("DOMContentLoaded", loadTheme)
+
+    </script>
+</body>
+</html>

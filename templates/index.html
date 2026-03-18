@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileFlow — Smart File Organizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="aurora">
+        <div class="aurora-blob a1"></div>
+        <div class="aurora-blob a2"></div>
+        <div class="aurora-blob a3"></div>
+        <div class="aurora-blob a4"></div>  
+    </div>
+
+    <div class="page-wrap">
+
+        <nav class="navbar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 7C3 5.9 3.9 5 5 5h4.6l2 2H19c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V7z"
+                              stroke="url(#navGrad)" stroke-width="2" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="navGrad" x1="3" y1="5" x2="21" y2="19"
+                                            gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#a78bfa"/>
+                                <stop offset="1" stop-color="#38bdf8"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="logo-text">FileFlow</span>
+            </div>
+
+            <div class="nav-right">
+                <span class="nav-version">v2.0</span>
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span class="theme-icon-dark">🌙</span>
+                    <span class="theme-icon-light">☀️</span>
+                </button>
+            </div>
+        </nav>
+
+        <div class="hero-grid">
+
+            <div class="hero-left">
+
+                <div class="eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    Smart File Management
+                </div>
+
+                <h1 class="hero-title">
+                    Clean up your<br>
+                    <span class="gradient-text">messy folders</span><br>
+                    in one click
+                </h1>
+
+                <p class="hero-desc">
+                    Select a folder — FileFlow sorts, organizes, and
+                    reports your files automatically. No technical
+                    knowledge needed.
+                </p>
+
+                <div class="main-card">
+
+                    <div class="card-section">
+                        <div class="section-label">📁 Choose Folder</div>
+                        <div class="browse-row">
+                            <div class="path-display" id="pathDisplay">
+                                <svg width="14" height="14" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2"
+                                     style="flex-shrink:0;opacity:0.35">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                <span id="pathText" class="path-placeholder">
+                                    Click Browse to choose a folder...
+                                </span>
+                            </div>
+                            <button class="browse-btn" id="browseBtn"
+                                    onclick="browseFolder()">
+                                <span id="browseBtnText">
+                                    <svg width="14" height="14" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                    </svg>
+                                    Browse
+                                </span>
+                                <span id="browseLoader" class="hidden">
+                                    <span class="spinner-sm"></span>
+                                </span>
+                            </button>
+                        </div>
+                        <div id="folderConfirm" class="confirm-chip hidden">
+                            <svg width="13" height="13" viewBox="0 0 24 24"
+                                 fill="none" stroke="#34d399" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            <span id="folderConfirmText"></span>
+                        </div>
+                    </div>
+
+                    <div class="card-section">
+                        <div class="section-label">⚙️ Options</div>
+                        <label class="toggle-row" for="includeSubfolders">
+                            <div class="toggle-info">
+                                <span class="toggle-title">
+                                    Also sort files inside subfolders
+                                </span>
+                                <span class="toggle-sub">
+                                    Goes deeper — organizes files in nested folders too
+                                </span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="includeSubfolders">
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="errorMsg" class="error-box hidden">
+                        <svg width="15" height="15" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <span id="errorText"></span>
+                    </div>
+
+                    <button class="run-btn" id="organizeBtn"
+                            onclick="startOrganize()" disabled>
+                        <span id="organizeBtnText">
+                            <svg width="17" height="17" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            Organize Files
+                        </span>
+                        <span id="organizeBtnLoader" class="hidden">
+                            <span class="spinner"></span>
+                            Organizing...
+                        </span>
+                    </button>
+
+                </div>
+
+                <div class="trust-row">
+                    <div class="trust-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24"
+                             fill="none" stroke="#4ade80" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Never deletes files
+                    </div>
+                    <div class="trust-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24"
+                             fill="none" stroke="#4ade80" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Undo anytime
+                    </div>
+                    <div class="trust-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24"
+                             fill="none" stroke="#4ade80" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        CSV report included
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="hero-right">
+                <div class="feature-cards">
+
+                    <div class="feat-card" style="--delay:0.05s">
+                        <div class="feat-icon">🗂️</div>
+                        <div>
+                            <div class="feat-title">7 Auto-Categories</div>
+                            <div class="feat-sub">
+                                Images, Videos, Docs, Audio, Code, Archives and More
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feat-card" style="--delay:0.1s">
+                        <div class="feat-icon">↩️</div>
+                        <div>
+                            <div class="feat-title">One-Click Undo</div>
+                            <div class="feat-sub">
+                                Changed your mind? Put everything back instantly
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feat-card" style="--delay:0.15s">
+                        <div class="feat-icon">📊</div>
+                        <div>
+                            <div class="feat-title">Visual Reports</div>
+                            <div class="feat-sub">
+                                Pie charts, file tables and downloadable CSV
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feat-card" style="--delay:0.2s">
+                        <div class="feat-icon">⚡</div>
+                        <div>
+                            <div class="feat-title">Fast and Safe</div>
+                            <div class="feat-sub">
+                                Never overwrites. Never deletes. Always renames safely
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feat-card" style="--delay:0.25s">
+                        <div class="feat-icon">🗃️</div>
+                        <div>
+                            <div class="feat-title">Run History</div>
+                            <div class="feat-sub">
+                                Every run saved to database. View and manage past runs
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feat-card" style="--delay:0.3s">
+                        <div class="feat-icon">🌳</div>
+                        <div>
+                            <div class="feat-title">Deep Scan</div>
+                            <div class="feat-sub">
+                                Option to organize files inside subfolders too
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
